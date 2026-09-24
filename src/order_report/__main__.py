@@ -1,24 +1,52 @@
 import logging
 from pathlib import Path
+import pandas as pd
 import sys
 from . import config, loading, validation, processing, reporting
 
 logger = logging.getLogger("order_report")
 
-def run_pipeline(input_path: Path, output_dir: Path) -> None:
-    df = loading.load_df(input_path)
-    validation.validate_columns(df)
-    clean_df = validation.clean_data(df)
 
-    processed_df = processing.calculate_order_values(clean_df)
+class OrderReportPipeline:
+    """Encapsulates the execution state and steps for order processing"""
+    def __init__(self, input_path: Path, output_dir: Path) -> None:
+        self.input_path = input_path
+        self.output_dir = output_dir
+        self.raw_df: pd.DataFrame | None = None
+        self.processed_df: pd.DataFrame | None = None
+        self.reports: dict[str, pd.DataFrame] = {}
 
-    reports = {
-        "summary_by_category": processing.summarize_by_category(processed_df),
-        "summary_by_region": processing.summarize_by_region(processed_df),
-        "kpi_overview": processing.generate_kpi_summary(processed_df)
-    }
+    def load_and_clean(self) -> None:
+        """Loads and cleans input data"""
+        self.raw_df = loading.load_df(self.input_path)
+        validation.validate_columns(self.raw_df)
+        cleaned = validation.clean_data(self.raw_df)
+        self.processed_df = processing.calculate_order_values(cleaned)
 
-    reporting.save_all_reports(reports, output_dir)
+    def generate_reports(self) -> None:
+        """Calculates internal summary reports"""
+        if self.processed_df is None:
+            raise RuntimeError("Data must be loaded before generating reports")
+
+        self.reports = {
+            "summary_by_category": processing.summarize_by_category(self.processed_df),
+            "summary_by_region": processing.summarize_by_region(self.processed_df),
+            "kpi_overview": processing.generate_kpi_summary(self.processed_df)
+        }
+
+    def save(self) -> None:
+        """Saves generated reports to disk"""
+        if not self.reports:
+            raise RuntimeError("No reports available to save")
+
+        reporting.save_all_reports(self.reports, self.output_dir)
+
+    def run(self) -> None:
+        """Executes the complete pipeline sequentially"""
+        self.load_and_clean()
+        self.generate_reports()
+        self.save()
+
 
 def main() -> None:
     """Main entry point for the order report application"""
@@ -26,23 +54,12 @@ def main() -> None:
     logger.info("Starting order processing pipeline")
 
     try:
-        run_pipeline(config.INPUT_FILE_PATH, config.OUTPUT_DIR)
-        logger.info("Pipeline executed successfulley. All task completed")
+        pipeline = OrderReportPipeline(config.INPUT_FILE_PATH, config.OUTPUT_DIR)
+        pipeline.run()
 
-    except FileNotFoundError as error:
-        logger.error("Data file missing: %s", error)
-        sys.exit(1)
-
-    except ValueError as error:
-        logger.error("Validation error: %s", error)
-        sys.exit(1)
-
-    except IOError as error:
-        logger.error("Report output error: %s", error)
-        sys.exit(1)
-
+        logger.info("Pipeline executed successfully")
     except Exception as error:
-        logger.critical("Unexpected system failure: %s", error, exc_info=True)
+        logger.critical("Pipeline failed: %s", error, exc_info=True)
         sys.exit(1)
 
 if __name__ == "__main__":
