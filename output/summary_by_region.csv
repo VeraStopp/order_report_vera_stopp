@@ -1,0 +1,6 @@
+region,total_orders,total_sales,returned_orders
+East,18,35585.35,3
+North,23,29891.95,3
+South,24,36737.95,6
+Unknown,1,3196.0,1
+West,14,32624.8,2

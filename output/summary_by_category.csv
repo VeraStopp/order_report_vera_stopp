@@ -1,0 +1,5 @@
+product_category,total_orders,total_sales,returned_orders
+Books,21,10103.0,2
+Electronics,26,79589.29999999999,7
+Home,17,23927.6,4
+Sports,16,24416.15,2

@@ -2,8 +2,6 @@
 *.log
 order_report.log
 
-# Ignore generated output
-output/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
