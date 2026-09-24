@@ -27,5 +27,6 @@ Att inte missa någonting och att förstå vad som skulle vara i vilken modul/fi
 
 ## 7. Vad hade du velat förbättra ytterligare om du haft mer tid?
 - Flytta ut hårdkodade regler till en extern konfigurationsfil så att det kan ändras utan att koden behöver ändras t ex config.yaml
+- Göra fler uträkningar
 - Göra visualiseringar
 - Generera automatiska rapporter
